@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 
+
 ## ATENCION: Debe colocar la direccion en la que ha sido publicada la aplicacion en la siguiente linea
-# url = 'https://tp8-555555.streamlit.app/'
+# url = 'https://tp8-55533.streamlit.app/'
 
 def mostrar_informacion_alumno():
     with st.container(border=True):
@@ -47,20 +48,21 @@ def graficar_evolucion(datos):
 
         # Calcular métricas
         datos_filtrados['Precio_promedio'] = datos_filtrados['Ingreso_total'] / datos_filtrados['Unidades_vendidas']
-        precio_promedio = datos_filtrados['Precio_promedio'].mean()
+        promedio_precio = datos_filtrados['Precio_promedio'].mean()
 
-        datos_filtrados['Margen_promedio'] = (datos_filtrados['Ingreso_total'] - datos_filtrados['Costo_total']) / datos_filtrados['Ingreso_total']
-        margen_promedio = datos_filtrados['Margen_promedio'].mean() * 100  # Convertir a porcentaje
+        precios_por_año = datos_filtrados.groupby('Año')['Precio_promedio'].mean()
+        variacion_precio = precios_por_año.pct_change().mean() * 100
 
-        precio_promedio_anual = datos_filtrados.groupby('Año')['Precio_promedio'].mean()
-        variacion_precio = precio_promedio_anual.pct_change().mean() * 100
+        datos_filtrados['Ganancia'] = datos_filtrados['Ingreso_total'] - datos_filtrados['Costo_total']
+        datos_filtrados['Margen'] = (datos_filtrados['Ganancia'] / datos_filtrados['Ingreso_total']) * 100
+        margen_promedio = datos_filtrados['Margen'].mean()
 
-        margen_promedio_anual = datos_filtrados.groupby('Año')['Margen_promedio'].mean()
-        variacion_margen = margen_promedio_anual.pct_change().mean() * 100
+        margen_anual = datos_filtrados.groupby('Año')['Margen'].mean()
+        variacion_margen = margen_anual.pct_change().mean() * 100
 
         unidades_vendidas = datos_filtrados['Unidades_vendidas'].sum()
-        unidades_vendidas_anual = datos_filtrados.groupby('Año')['Unidades_vendidas'].sum()
-        variacion_unidades = unidades_vendidas_anual.pct_change().mean() * 100
+        ventas_por_año = datos_filtrados.groupby('Año')['Unidades_vendidas'].sum()
+        variacion_unidades = ventas_por_año.pct_change().mean() * 100
 
         # Crear el gráfico
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -103,11 +105,12 @@ def graficar_evolucion(datos):
             col1, col2 = st.columns([1, 3])
             with col1:
                 st.subheader(f"{producto}")
-                st.metric(label="Precio Promedio", value=f"${int(precio_promedio):,}".replace(',', '.'), delta=f"{variacion_precio:,.2f}%")
-                st.metric(label="Margen Promedio", value=f"{int(margen_promedio):,}%", delta=f"{variacion_margen:,.2f}%")
-                st.metric(label="Unidades Vendidas", value=f"{int(unidades_vendidas):,}".replace(',', '.'), delta=f"{variacion_unidades:,.2f}%")
+                st.metric(label="Precio Promedio", value=f"${promedio_precio:,.0f}".replace(',', '.'), delta=f"{variacion_precio:.2f}%")
+                st.metric(label="Margen Promedio", value=f"{margen_promedio:,.0f}%".replace(',', '.'), delta=f"{variacion_margen:.2f}%")
+                st.metric(label="Unidades Vendidas", value=f"{unidades_vendidas:,.0f}".replace(',', '.'), delta=f"{variacion_unidades:.2f}%")
             with col2:
                 st.pyplot(fig)
+
 def main():
     datos = cargar_datos()
     if datos is None:
